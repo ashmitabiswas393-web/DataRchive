@@ -1,0 +1,23 @@
+---
+title: "Believe in Gods"
+author: "Ashmita Biswas"
+---
+
+# Beleive in God
+
+[Add somthing]
+
+About the Data
+
+This data set is derived from peasants from Srishti Manipal Institute to analyse the proportions of non-tattooed people who find tattoos attractive✨.
+
+Data Dictionary
+
+Qualitative Variables
+
+Name: Name of the student
+
+Gender: Gender of the student where; M = Male, F = Female
+
+Tattoos_Attractive: Students' perception about tattoos being attractive or not
+

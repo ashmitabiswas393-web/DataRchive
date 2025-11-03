@@ -1,0 +1,103 @@
+---
+title: "ClassWork7"
+---
+
+```{r}
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+# Run this in your console first
+# devtools::install_github("ropensci/rnaturalearthhires")
+library(rnaturalearthhires)
+
+# Plotting Maps
+library(tidyverse) # Maps using ggplot() + geom_sf()
+library(ggformula) # Maps using gf_sf()
+library(tmap) # Thematic Maps, static and interactive
+library(tmaptools)
+library(tmap.mapgl)
+library(osmdata) # Fetch map data from osmdata.org
+library(sfheaders) # Handcrafted Map data
+## Interactive Maps
+library(leaflet) # interactive Maps
+library(leaflet)
+library(leaflet.providers)
+library(leaflet.extras)
+library(leaflet.extras) # Globe maps in R. Part of the htmlwidgets family of packages
+
+# For Spatial Data Frame Processing
+library(sf)
+```
+
+77.5680726566,13.0060480699,77.5731959698,13.0099049656
+
+```{r}
+bbox_1 <- matrix(c(77.5680726566,13.0060480699,77.5731959698,13.0099049656), byrow = FALSE, nrow = 2,
+    ncol = 2, dimnames = list(c("x", "y"), c("min", "max")))
+bbox_1
+```
+
+```{r}
+# Using getbb command from the osmdata package
+bbox_2 <- osmdata::getbb("Malleswaram, Bangalore, India")
+bbox_2
+```
+
+```{r}
+#|eeval: false
+
+locations <- 
+  osmdata::opq(bbox = bbox_2) %>% 
+  osmdata::add_osm_feature(key = "amenity", 
+                           value = c("restaurant", "atm", "college")) %>% 
+  osmdata_sf() %>%  # Convert to Simple Features format
+  purrr::pluck("osm_points") # Pull out the data frame of interest
+
+# Get all buildings within my bbox
+dat_buildings <-
+  osmdata::opq(bbox = bbox_2) %>% 
+  osmdata::add_osm_feature(key = "building") %>% 
+  osmdata_sf() %>% 
+  purrr::pluck("osm_polygons") 
+
+# Get all residential roads within my bbox
+dat_roads <- 
+  osmdata::opq(bbox = bbox_2) %>% 
+  osmdata::add_osm_feature(key = "highway") %>% 
+  osmdata_sf() %>% 
+  purrr::pluck("osm_lines") 
+
+# Get all parks / natural /greenery areas and spots within my bbox
+dat_natural <-   
+  osmdata::opq(bbox = bbox_2) %>% 
+  osmdata::add_osm_feature(key = "natural",
+                           value = c("tree", "water", "wood")) %>% 
+  osmdata_sf()
+dat_natural
+
+dat_trees <- 
+  dat_natural %>% 
+  purrr::pluck("osm_points") 
+```
+
+```{r}
+roads <- st_read("osm_data/dat_roads.gpkg")
+trees <- st_read("osm_data/dat_trees.gpkg")
+buildings <- st_read("osm_data/dat_buildins.gpkg")
+greenery <- st_read("osm_data/dat_greenery.gpkg")
+```
+
+```{r}
+gf_sf(data = buildings, geometry = ~ geom, color = "#d4b17a") %>% 
+  gf_sf(data = greenery, geometry = ~ geom, color = "lightgreen") %>% 
+  gf_sf(data = roads, geometry = ~ geom, color = "lightblue", linewidth = 0.2) %>% 
+  gf_sf(data = trees, geometry = ~ geom, color = "darkgreen")
+```
+
+```{r}
+gf_sf(data = roads, geometry = ~ geom)
+```
+
+```{r}
+World
+```

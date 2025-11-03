@@ -1,0 +1,60 @@
+---
+title: "Weekly Expenditure"
+author: "Ashmita Biswas"
+---
+
+# Weekly expenditure
+
+How much do Srishti students spend in a week?
+
+## About the Data
+
+This data set is derived from the peasants of Srishti Manipal Institute to analyse the spending behaviour in a week.
+
+## Data Dictionary
+
+
+:   **Name:** Name of the student
+
+:   **Gender:** Gender of the students categorized as 'Male' & 'Female'
+
+:   **Total_Expenditure_Last_Week:** Total amount of money spent in the last week by the student
+
+## Hypothesis
+
+-  Will Friends have significantly higher ratings than Big Bang Theory due to broader cultural popularity and peer influence?
+
+
+- Is there a difference in spending behaviour amongst the different gender?
+
+
+### Setup
+
+```{r}
+#| label: setup
+#| echo: false
+
+library(readr)
+library(tidyverse)
+library(ggformula)
+library(mosaic)
+library(skimr)
+library(visdat) 
+library(naniar)
+library(janitor)
+library(tinytable)
+library(DT)
+library(crosstable)
+library(geofacet)
+library(ggplot2)
+library(GGally)
+```
+
+### Reading the Data
+
+```{r}
+
+weekly_expends_data <- read_csv("~/Documents/R_work/Class work 2/ClassWork2/posts/A3/Datasets for A3/4-weekly_expenditure.csv") %>%
+janitor::clean_names(case = "snake")
+weekly_expends_data
+```

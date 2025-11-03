@@ -1,0 +1,171 @@
+---
+title: "Tattoos are attractive?"
+author: Ashmita Biswas
+---
+
+# Are tattoos attractive?
+
+Tattoos or taboos? Analyzing the perception about tattoos.
+
+![](images/clipboard-1622646561.png)
+
+## About the Data
+
+This data set is derived from the peasants of Srishti Manipal Institute to analyse the proportions of non-tattooed people who find tattoos attractive✨.
+
+## Data Dictionary
+
+**Qualitative Variables**
+
+:   **Name:** Name of the student
+
+:   **Gender:** Gender of the student where; M = Male, F = Female
+
+:   **Tattoos_Attractive:** Students' perception about tattoos being attractive or not
+
+## Hypothesis
+
+-   Being in an art and design college, will the proportion of people finding tattoos attractive be more or be the same i.e. 1:1?
+
+-   Does gender play a role in the way tattoos are perceived as?
+
+### Setup
+
+```{r}
+#| label: setup
+#| echo: false
+
+library(readr)
+library(tidyverse)
+library(ggformula)
+library(mosaic)
+library(skimr)
+library(visdat) 
+library(naniar)
+library(janitor)
+library(tinytable)
+library(DT)
+library(crosstable)
+library(geofacet)
+library(ggplot2)
+```
+
+### Reading the Data
+
+```{r}
+
+tattoo_data <- read_csv("~/Documents/R_work/Class work 2/ClassWork2/posts/A3/Datasets for A3/1-tattoo_attraction.csv") %>% 
+janitor::clean_names(case = "snake")
+tattoo_data
+```
+
+### Checking for missing data
+
+```{r}
+tattoo_data %>%
+  visdat::vis_miss()
+```
+
+Seems like there is no missing data! (Did i collect this data? Hmm)
+
+### Munging the data
+
+```{r}
+tattoo_data_mod1 <- tattoo_data %>% 
+mutate(gender = as.factor(gender),
+tattoo_attractive = as.factor(tattoo_attractive))
+```
+
+## Examining the Data
+
+### Taking a glimpse 👀 of the Data
+
+```{r}
+glimpse(tattoo_data_mod1)
+```
+
+There are a total of *40 entries*
+
+### Counting gender
+
+```{r}
+tattoo_data_mod1 %>% 
+  dplyr::count(gender) %>%
+  tt()
+```
+
+#### Observation
+
+-   There is an equal number of male and female representation
+
+### Counting tattoo attractive perception
+
+```{r}
+tattoo_data_mod1 %>% 
+  dplyr::count(tattoo_attractive) %>% 
+  tt()
+```
+
+```{r}
+tattoo_data_mod1 %>% 
+gf_bar(~tattoo_attractive, fill = "navy") %>% 
+gf_labs(title = "Do students find tattoos attractive?",
+       x = "Are tattoos attractive?",
+       y = "Number of students")
+```
+
+#### Observation
+
+-   We can see that exactly *75%* of the students *find tattoos attractive*
+-   This maybe due to the influence of the environment where tattoos are looked as a normal mark to have and/or younger generation embracing tattoos.
+
+### Does gender play a role in this?
+
+```{r}
+tattoo_data_mod1 %>% 
+gf_bar(~tattoo_attractive, fill = ~gender, position = "dodge") %>% 
+gf_labs(title = "Tattoo Attractiveness by Gender",
+       x = "Are tattoos attractive?",
+       y = "Number of students")
+
+```
+
+```{r}
+tattoo_data_mod1 %>% 
+gf_bar(~tattoo_attractive, fill = ~gender, position = "fill") %>% 
+gf_labs(title = "Tattoo Attractiveness by Gender",
+       x = "Are tattoos attractive?",
+       y = "Number of students")
+
+```
+
+```{r}
+tattoo_data_mod1 %>% 
+    count(across(c("gender", "tattoo_attractive"))) %>%
+  tt()
+```
+
+#### Observation
+
+-   There is an equal distribution amongst the 2 genders, which leads to the belief that there might be no gender bias in the perception of tattoos being attractive to the 2 genders.
+
+```{r}
+vcd::structable(gender ~ tattoo_attractive, data = tattoo_data_mod1) %>%
+  as.matrix() %>%
+  addmargins() %>%
+  as_tibble(rownames = "gender")
+
+vcd::structable(gender ~ tattoo_attractive, data = tattoo_data_mod1) %>%
+  vcd::mosaic(shade = TRUE, legend = TRUE,
+              main = "Tattoo Attractiveness by Gender")
+```
+
+### Observation
+
+-   The p value = 1 between Gender and Tattoo attractiveness.
+
+-   This means there is no gender bias and the variables are independent / have no correlation to on another.
+
+## Inference
+
+-   

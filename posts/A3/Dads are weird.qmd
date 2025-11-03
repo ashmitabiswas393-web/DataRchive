@@ -1,0 +1,58 @@
+---
+title: "Dads are weird"
+author: "Ashmita Biswas"
+---
+Are Dad's weird?
+
+
+## About the Data 
+
+This data set is derived from the peasants of Manipal University to analyse the ratings of classic tv series - Friends, Modern Family, and Big Bang Theory
+
+## Data Dictionary
+
+:   **gender:** Gender of the student where, categorized by 'Male' and 'Female'
+
+:   **college:** Institute within Manipal University, the peasant belongs to.
+
+:   **is_dad_weird:** Is the dad perceived as weird or not, categorized by 'Yes' and 'No'
+
+:   **name:** Name of the student (aka. peasant)
+
+
+## Hypothesis
+
+- Do SMI students find their dads to be weirder as compared to MIT
+
+- Is there a bias in gender when it comes do dad weirdness perception of dads.
+
+### Setup
+
+```{r}
+#| label: setup
+#| echo: false
+
+library(readr)
+library(tidyverse)
+library(ggformula)
+library(mosaic)
+library(skimr)
+library(visdat) 
+library(naniar)
+library(janitor)
+library(tinytable)
+library(DT)
+library(crosstable)
+library(geofacet)
+library(ggplot2)
+library(GGally)
+```
+
+### Reading the Data
+
+```{r}
+
+weird_dad_data <- read_csv("~/Documents/R_work/Class work 2/ClassWork2/posts/A3/Datasets for A3/3-weird_dads.csv") %>%
+janitor::clean_names(case = "snake")
+weird_dad_data
+```
