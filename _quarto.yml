@@ -4,6 +4,7 @@ title: "DataRchive"
 
 website:
   title: "DataRchive"
+  site-url: "https://example.com"
   navbar:
     right:
       - about.qmd
