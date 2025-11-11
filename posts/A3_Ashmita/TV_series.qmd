@@ -1,0 +1,399 @@
+---
+title: "TV Series Rating"
+author: Ashmita
+---
+
+# TV Series Rating
+
+![](images/clipboard-3257828289.png)
+
+## About the Data
+
+This data set is derived from the peasants of Manipal University and captures the viewing and rating patterns for three iconic television series: *Friends*, *Modern Family*, and *The Big Bang Theory*.
+
+## Data Dictionary
+
+**Qualitative Variables**
+
+:   **Name:** Name of the student
+
+:   **Gender:** Gender of the students categorized as 'Male' & 'Female'
+
+:   **Friends:** Rating of the 'Friends' TV show
+
+:   **Modern Family:** Rating of the 'Modern Family' TV show
+
+:   **Big Bang Theory:** Rating of the 'Big Bang Theory' TV show
+
+## Hypothesis
+
+-   There might be a significant difference in the mean ratings for all the three shows.
+
+    Something interesting to look for:
+
+-   Gender-based differences may exist with females potentially rating Friends higher, and males favoring The Big Bang Theory due to its STEM-oriented humor.
+
+-   Modern Family might show the most balanced ratings across genders, reflecting its diverse character appeal.
+
+### Setup
+
+```{r}
+#| label: setup
+#| echo: false
+
+library(readr)
+library(tidyverse)
+library(ggformula)
+library(mosaic)
+library(skimr)
+library(visdat) 
+library(naniar)
+library(janitor)
+library(tinytable)
+library(DT)
+library(crosstable)
+library(geofacet)
+library(ggplot2)
+library(GGally)
+library(supernova)
+library(ggprism)
+```
+
+### Inspecting the Data
+
+```{r}
+
+tv_series_data <- read_csv("~/Documents/R_work/DataRchive/posts/A3_Ashmita/Datasets/2-tv_series.csv") %>%
+janitor::clean_names(case = "snake")
+tv_series_data
+```
+
+### Checking for missing data
+
+```{r}
+tv_series_data %>%
+  visdat::vis_miss()
+```
+
+```{r}
+tv_series_data %>%
+  visdat::vis_dat()
+```
+
+Since there are a few missing numeric data, dropping the respective entries
+
+```{r}
+tv_series_mod1 <- tv_series_data %>% 
+  naniar::replace_with_na_all(condition = ~ .x %in% common_na_numbers) %>% 
+drop_na()
+tv_series_mod1
+```
+
+Number of rows are reduced from 52 to 46, thereby 6 entries are removed
+
+### Munging the Data
+
+Factoring gender
+
+```{r}
+tv_series_mod2 <- tv_series_mod1 %>% 
+mutate(gender = as.factor(gender))
+```
+
+## Examining the Data
+
+### Taking a glimpse 👀 of the Data
+
+```{r}
+glimpse(tv_series_mod2)
+```
+
+### Counting Gender
+
+```{r}
+tv_series_mod2 %>% 
+  dplyr::count(gender) %>%
+  tt()
+```
+
+### Summarizing the Data
+
+```{r}
+summary(tv_series_mod2)
+```
+
+### Observation
+
+-   There is nearly equal gender distribution where, female = 22 and male = 24
+
+-   We can see that the mean and median for the modern family is the highest, hence has the highest ratings
+
+-   Friends has wider spread ratings ranging from 1 to 10
+
+-   Big Bang Theory has more variability with wider quartiles
+
+## Restructuring the Data
+
+-   Since the data is now in a wide format, transforming it into a wide format and factoring the shows
+
+```{r}
+tv_series_mod3 <- tv_series_mod2 %>% 
+  pivot_longer(
+    cols = c(friends, modern_family, big_bang_theory),
+    names_to = "show",
+    values_to = "rating"
+  ) %>%
+  mutate(show = as.factor(show))
+
+  glimpse(tv_series_mod3)
+```
+
+### Visualizing TV shows rating in a density plot
+
+```{r}
+tv_series_mod3 %>% 
+ gf_dens(~rating, color = ~show, size = 1, fill = ~show) %>%
+  gf_labs(title = "TV Series rating distributions",
+          x = "Ratings",
+          y = "Density") %>% 
+  gf_refine(
+    scale_x_continuous(breaks = seq(0, 10, 1))
+  )
+```
+
+#### Observation
+
+-   Modern Family stands out as the most consistently liked show across students
+
+-   The spread in Big Bang Theory ratings indicates a divided audience where some enjoyed it, while others rated it lower
+
+-   The moderate peak of Friends suggests generally positive but mixed responses
+
+### TV show ratings in a boxplot
+
+```{r}
+tv_series_mod3 %>% 
+    gf_boxplot(rating ~ show, fill = ~show, orientation = "x") %>%
+  gf_labs(title = "Rating distributions",
+          x = "TV Shows",
+          y = "Rating")
+```
+
+#### Observation
+
+-   Students rated Modern Family most favorably and consistently.
+
+-   Friends and Big Bang Theory have larger interquartile ranges, showing greater rating variability.
+
+-   A few outliers appear for all shows, especially lower ratings.
+
+-   Variability in *Friends* and *Big Bang Theory* ratings suggests that personal preference or familiarity plays a stronger role in these shows.
+
+### TV shows rating vs. Gender
+
+```{r}
+tv_series_mod3 %>% 
+gf_jitter(rating ~ show, color = ~gender, width = 0.075, alpha = 0.7) %>%
+  gf_labs(title = "Individual Ratings by Gender",
+          x = "TV Shows",
+          y = "Rating")
+```
+
+#### Observation
+
+-   Gender differences in preferences are subtle rather than pronounced.
+
+-   Modern Family has more clustering near higher ratings for both genders.
+
+```{r}
+tv_series_mod3 %>% 
+    gf_boxplot(rating ~ show, fill = ~gender, position = "dodge", orientation = "x") %>%
+  gf_labs(title = "Rating distributions by Show and Gender")
+```
+
+#### Observation
+
+-   For Modern Family, females rate the show slightly higher on average, suggesting stronger appreciation among them.
+
+-   Big Bang Theory median ratings are nearly identical across genders.
+
+-   Overall spread of ratings is similar for both genders, indicating comparable variability.
+
+-   Because the sample size per gender-show combination is small (\~22–24 points), a few higher or lower ratings can shift the mean lines noticeably, hence might not give an absolute inference.
+
+### Finding correlations
+
+```{r}
+tv_series_mod2 %>%
+  select(friends, modern_family, big_bang_theory) %>%
+  ggpairs(
+    title = "Do People Rate Shows Similarly?",
+    lower = list(continuous = wrap("points", alpha = 0.6, size = 2))
+  )
+```
+
+#### Observation
+
+-   There is moderate correlation between Friends and The Big Bang Theory (0.43)
+
+-   Weak correlation exists between Friends and Modern Family (0.29)
+
+-   Very weak correlation between Modern Family and The Big Bang Theory (0.17)
+
+#### Inference
+
+-   People who liked Friends tended to also rate Big Bang Theory relatively high. Both are ensemble sitcoms with familiar tropes (friendship, humor, comfort viewing)
+
+-   Ratings for Modern Family and Big Bang theory two shows are largely independent. People who loved one didn’t necessarily feel the same about the other, suggesting they appeal to distinct viewer sensibilities (family-centered humor vs. nerd-centric social comedy)
+
+<!-- -->
+
+-   *Big Bang Theory* divides opinion, perhaps due to its niche humor or character archetypes.
+
+## Conclusion from EDA
+
+The exploratory analysis reveals distinct viewing and rating patterns across the three sitcoms.
+
+-   Friends and The Big Bang Theory show a moderate positive correlation, suggesting that **audiences who enjoy one tend to appreciate the other**. Modern Family appears to attract a different audience segment, with weak correlations and a unique rating distribution.
+
+-   Friends emerges as the most **consistently liked show**, with tightly clustered high ratings, reflecting broad cultural appeal. The Big Bang Theory shows **more variability, indicating polarized opinions**. Meanwhile, **Modern Family stands out with fewer but strongly positive ratings**, hinting at a niche yet deeply appreciative fan base.
+
+## Inference
+
+**Null Hypothesis** (H₀): There is **no significant difference** in mean ratings among the three TV shows (Friends, Modern Family, and The Big Bang Theory).
+
+**Alternative Hypothesis** (H₁ )**:** At least **one show differs significantly** in its mean rating.
+
+### Using **ANOVA** to test whether students’ ratings vary significantly between shows.
+
+```{r}
+tv_series_anova <- aov(rating ~ show, data = tv_series_mod3)
+tv_series_anova
+```
+
+```{r}
+tv_series_supernova <-
+  supernova::pairwise(tv_series_anova,
+    correction = "Bonferroni",
+    alpha = 0.05, # 95% CI calculation
+    var_equal = TRUE,
+    plot = T
+  )
+```
+
+#### Observation
+
+-   All three comparisons suggest that Modern Family \> Friends \> Big Bang Theory in mean ratings.
+
+-   The fact that none of the intervals cross 0 means all pairwise differences are significant after applying the conservative Bonferroni correction
+
+```{r}
+tv_series_supernova$show
+```
+
+```{r}
+supernova::supernova(tv_series_anova)
+```
+
+#### Observation
+
+-   The ANOVA results (F(2,135) = 12.37, *p* \< .001) indicate a **significant difference** in mean ratings among the three shows.
+
+-   This means at least one show received ratings that differ meaningfully from the others & viewers don’t rate all sitcoms equally.
+
+```{r}
+supernova::equation(tv_series_anova)
+```
+
+```{r}
+
+tv_series_mod3 %>%
+  mutate(fitted = fitted(tv_series_anova)) %>%
+  gf_jitter(rating ~ show,
+    width = 0.2, alpha = 0.6,
+    color = ~show,
+    data = .
+  ) %>%
+  gf_summary(
+    group = ~1,
+    fun = "mean", geom = "line", colour = "lightblue",
+    lty = 1, linewidth = 2
+  ) %>%
+  gf_point(fitted ~ show,
+    color = ~show,
+    shape = 2,
+    size = 6
+  ) %>%
+  gf_segment(fitted + fitted ~ 0 + show, linetype = 2, color = ~show) %>%
+ 
+  gf_labs(
+    title = "Fitted ANOVA Model Equation",
+    x = "Ratings", y = "TV Series"
+  ) %>%
+  gf_refine(
+    guides(colour = guide_legend(title = "TV Series"))
+  ) %>%
+  gf_refine(
+    scale_x_discrete(guide = "prism_bracket"),
+    scale_y_continuous(breaks = seq(0, 10, 1))
+  )
+```
+
+#### Observation
+
+-   The **triangles** representing group means, connected by a trend line that visually captures the upward slope of the average ratings.
+
+-   The visibly steeper rise toward *Modern Family* clearly reinforces that it is the **highest-rated show overall**.
+
+-   The fitted ANOVA model quantifies how each show deviates from the overall mean. It confirms a consistent trend observed across analyses:
+
+    -   *Friends* and *The Big Bang Theory* are perceived similarly, both around mid-to-high ratings.
+
+    -   *Modern Family* significantly outperforms both, reflecting a distinct preference and stronger audience approval.
+
+```{r}
+shapiro.test(x = tv_series_mod3$rating)
+```
+
+Observation
+
+-   The p-value is **much smaller than 0.05**, indicating that the null hypothesis of normality is **rejected**.
+
+-   The Shapiro–Wilk test (W = 0.916, *p* \< .001) confirms that the ratings deviate from a perfectly normal distribution.
+
+-   With sample size being around 46 per group, the ANOVA remains reasonably robust to non-normality, provided there are no extreme outliers and variances are roughly equal
+
+```{r}
+tv_series_anova$residuals %>%
+  as_tibble() %>%
+  gf_dhistogram(~value, data = .) %>%
+  gf_labs(
+    title = "Residuals Histogram",
+    x = "Residuals", y = "Count"
+  ) %>%
+  gf_fitdistr()
+##
+tv_series_anova$residuals %>%
+  as_tibble() %>%
+  gf_qq(~value, data = .) %>%
+  gf_qqstep() %>%
+  gf_labs(
+    title = "Residuals Q-Q Plot",
+    x = "Theoretical Quantiles", y = "Sample Quantiles"
+  ) %>%
+  gf_qqline()
+```
+
+#### Observation
+
+-   The histogram shows a roughly bell-shaped distribution centered near zero. However, the tails appear slightly heavier than expected in a perfect normal distribution. This means the residuals are *approximately* normal, but with some mild deviations.
+
+-   The Q-Q plot shows that most points follow the reference line in the center of the distribution, but there are noticeable deviations at both the lower and upper ends (tails). This suggests **slight departures from normality**, particularly due to a few extreme ratings.
+
+-   The deviations likely reflect the nature of **rating scales (1–10)**, where people often cluster ratings around favorites and least favorites.
+
+## Final interpretations
+
+Across the sample, Modern Family consistently received the highest ratings, with a relatively tight spread, indicating stronger overall agreement among viewers. Friends tended to receive moderately high but more variable ratings, whereas The Big Bang Theory showed the widest spread, reflecting a more polarized reception.
+
+To formally test whether the differences in ratings between shows were statistically meaningful, we conducted a one-way ANOVA, which indicated that **at least one show’s mean rating differs significantly from the others.**

@@ -1,0 +1,264 @@
+---
+title: "Weekly Expenditure"
+author: "Ashmita Biswas"
+---
+
+# Weekly expenditure
+
+Are Srishti students really Money-pal? 💸
+
+![](images/clipboard-1362529375.png)
+
+## About the Data
+
+This data is collected from Srishti Manipal Institute students, measuring weekly expenditure variations and exploring demographic influences on spending patterns.
+
+## Data Dictionary
+
+**Qualitative variables**
+
+:   **Name:** Name of the student (aka. peasant)
+
+:   **Gender:** Gender of the students categorized as 'Male' & 'Female'
+
+**Quantitative variables**
+
+:   **Total_Expenditure_Last_Week:** Total amount of money spent in the last week by the student
+
+## Hypothesis
+
+-   Do Srishti students exhibit higher than average weekly expenditure compared to normative spending benchmark (Rs. 2000)?
+
+**Something more to look for**
+
+-   Is there a difference in spending behaviour among genders?
+
+### Setup
+
+```{r}
+#| label: setup
+#| echo: false
+
+library(readr)
+library(tidyverse)
+library(ggformula)
+library(mosaic)
+library(skimr)
+library(visdat) 
+library(naniar)
+library(janitor)
+library(tinytable)
+library(DT)
+library(crosstable)
+library(geofacet)
+library(ggplot2)
+library(GGally)
+```
+
+### Inspecting the Data
+
+```{r}
+
+weekly_expends_data <- read_csv("~/Documents/R_work/DataRchive/posts/A3_Ashmita/Datasets/4-weekly_expenditure.csv") %>%
+janitor::clean_names(case = "snake")
+weekly_expends_data
+```
+
+### Checking for missing data
+
+```{r}
+weekly_expends_data %>%
+  visdat::vis_miss()
+```
+
+```{r}
+weekly_expends_data %>%
+  visdat::vis_dat()
+```
+
+Removing the unfilled columns
+
+```{r}
+weekly_expends_mod1 <- weekly_expends_data%>% 
+select(name, gender, total_expenditure_last_week)
+
+weekly_expends_mod1
+```
+
+### Munging the Data
+
+```{r}
+weekly_expends_mod2 <- weekly_expends_mod1 %>% 
+  mutate(gender = as.factor(gender))
+
+weekly_expends_mod2
+```
+
+## Examining the Data
+
+Summarizing in a table
+
+```{r}
+summary(weekly_expends_mod2)
+```
+
+#### Observation
+
+-   We can see that there is an equal (50%) representation of male and female, thus eliminating any gender bias in the data collection.
+
+-   The average spending of these peasants in a week is Rs. 4833
+
+-   Spending varies dramatically from lowest record being Rs. 365 to highest being Rs. 50,000 per week
+
+-   25% of these students spend under Rs. 1,204 weekly and top 25% spend over Rs. 4,475.
+
+### What is the spending behaviour
+
+```{r}
+weekly_expends_mod2 %>%
+  gf_boxplot(~total_expenditure_last_week, orientation = "y", fill="darkgreen") %>%
+  gf_labs(
+    title = "Weekly Spending Distribution",
+    x = "Total Expenditure (in Rs.)", 
+    y = "Students"
+  )
+```
+
+#### Observation
+
+-   Normal range of spendings are till Rs. 5000 a week with outliers spending around Rs. 15,000, Rs. 23,000 and Rs. 50,000 (extremely insane)
+
+-   This creates a highly right-skewed distribution, where a small number of students spend dramatically more than the rest.
+
+-   This spikes in the spending might be a cause of different student responsible for different financial payments
+
+### Visualizing spending of each student
+
+```{r}
+weekly_expends_mod2 %>%
+  arrange(total_expenditure_last_week) %>%
+  mutate(name = fct_inorder(name)) %>%
+  gf_col(total_expenditure_last_week ~ name, fill = ~gender) %>%
+  gf_labs(
+    title = "Weekly Spending",
+    x = "Student",
+    y = "Total Expenditure (in Rs.)"
+  ) %>%
+  gf_theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+#### Observation
+
+-   Most students cluster at **low to moderate spending levels (under Rs. 5,000)**. However, a small number of students stand out with extremely high spending, reaching up to Rs. 50,000 per week.
+
+-   Both genders appear across the spending range, though the **very high spenders at the extreme end are predominantly male**.
+
+-   **Average spending looks similar across genders**, aligning with earlier summary statistics.
+
+-   But **male students are more represented in the high-expenditure outliers**, suggesting **greater variability** in male spending behavior, not necessarily higher average spending (but since the data set samples 40 students, we can't make a concrete conclusion)
+
+### How do different gender spend differently?
+
+```{r}
+weekly_expends_mod2 %>%
+  gf_boxplot(log10(total_expenditure_last_week) ~ gender, fill = ~gender, orientation = "x") %>%
+  gf_labs(
+    title = "Weekly Spending Distribution by Gender",
+    x = "Gender", 
+    y = "Total Expenditure (in Rs.)"
+  )
+```
+
+#### Observation
+
+-   The **median spending** for male students is **slightly higher** than that of female students.
+
+-   Both groups show **similar lower bounds**, but the **upper range** of spending is **higher for males**, indicating **greater variability**.
+
+-   There are **visible outliers**, particularly among males, suggesting a **few male students spend significantly more** than the typical weekly amount.
+
+-   Female spending is more **consistent and tightly clustered**, whereas male spending is **more spread out**.
+
+### Gender wise spending in Density graph
+
+```{r}
+weekly_expends_mod2 %>%
+  gf_dens(~total_expenditure_last_week, colour = ~gender, fill = ~gender, size = 1, alpha = 0.5) %>%
+  gf_labs(
+    title = "Spending Density by Gender",
+    x = "Total Expenditure",
+    y = "Density"
+  )
+```
+
+#### Observation
+
+-   Both male and female spending distributions show a s**teep peak at lower expenditure levels**, meaning most students spend modestly
+
+-   The female curve peaks higher, more in the lower ranges indicating that female spending is more concentrated around this lower spending range.
+
+-   The male density curve is more spread out with longer tails, showing that while many males also spend moderately, there are more high-spending male outliers
+
+```{r}
+weekly_expends_mod2 %>%
+  dplyr::group_by(gender) %>%
+  dplyr::summarise(mean_spending = mean(total_expenditure_last_week)) %>%
+  gf_col(mean_spending ~ gender, fill = ~gender) %>%
+  gf_labs(
+    title = "Average weekly spending by Gender",
+    x = "Gender",
+    y = "Mean Expenditure (in Rs.)"
+  )
+
+```
+
+#### Observation
+
+-   On average, **male students spend significantly more** than female students. While females tend to cluster around \~Rs. 2,500 per week, **male spending averages above Rs. 6,500**, indicating a much higher weekly outflow.
+
+## Conclusion from EDA
+
+-   Most Srishti students spend **modest amounts** weekly (around **Rs. 1,000 – Rs. 4,500**), but a few students show **very high expenditures**, creating large outliers in the data. This indicates **big differences in lifestyle or financial responsibilities** among students.
+
+-   On average, **male students spend more than female students**, and their spending also varies more widely. Overall, the data shows that student spending behavior is **diverse**, with no single “typical” spending pattern across the group.
+
+## Inference
+
+**Null Hypothesis:** The true average weekly spending of Srishti students is **Rs. 2000**. There is no evidence that they spend more or less than this benchmark.
+
+**Alternative Hypothesis:** The true average weekly spending of Srishti students is **different from Rs. 2000**.
+
+### Performing Wilcoxon Test since the data is not normally distributed
+
+```{r}
+weekly_expends_mod2 <- function(x) {
+  sign(x) * total_expenditure_last_week(abs(x))
+}
+```
+
+```{r}
+t2 <- wilcox.test(weekly_expends_mod1$total_expenditure_last_week,
+                  mu = 2000,
+                  alternative = "two.sided",
+                  conf.int = TRUE,
+                  conf.level = 0.95) %>%
+  broom::tidy()
+
+t2
+```
+
+#### Conclusion
+
+-   The **p-value = 0.045**, which is **less than 0.05**.
+
+-   Therefore, we **reject the null hypothesis** that the median weekly spending is ₹2000.
+
+-   The **estimated median weekly expenditure is ₹2875**, and the confidence interval **does not include ₹2000**, further supporting the conclusion.
+
+## Final interpretation
+
+-   Srishti students **do spend significantly more than ₹2000 per week** on average. This suggests that their weekly expenditure is **substantially higher** than the chosen baseline, indicating a relatively **high-spend lifestyle** among students.
+
+-   Both male and female students show **similar median and distribution patterns**, while some males had extreme expenditure which indicates that lifestyle and personal budgeting habits are more influential than gender.
+
+-   Overall, the spending trend reflects a student culture shaped by **convenience purchases, social activities, and city-based living costs**, suggesting that daily expenditure is about about shared environment and lifestyle.

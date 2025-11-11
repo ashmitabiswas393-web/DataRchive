@@ -1,0 +1,224 @@
+---
+title: "Are Tattoos Attractive?"
+author: Ashmita Biswas
+---
+
+# Are Tattoos Attractive?
+
+Tattoos or taboos? Analyzing the perception about tattoos.
+
+![](images/clipboard-1622646561.png)
+
+## About the Data
+
+This data set is derived from the peasants of Srishti Manipal Institute to analyse the proportions of non-tattooed people who find tattoos attractive✨.
+
+## Data Dictionary
+
+**Qualitative Variables**
+
+:   **Name:** Name of the student
+
+:   **Gender:** Gender of the student where; M = Male, F = Female
+
+:   **Tattoos_Attractive:** Students' perception about tattoos being attractive or not
+
+## Hypothesis
+
+-   Being in an art and design college, will the proportion of people finding tattoos attractive be more or be equal to those who don't find it attractive?
+
+    **Something interesting to look for:**
+
+-   Does gender play a role in the way tattoos are perceived as?
+
+### Setup
+
+```{r}
+#| label: setup
+#| echo: false
+
+library(readr)
+library(tidyverse)
+library(ggformula)
+library(mosaic)
+library(skimr)
+library(visdat) 
+library(naniar)
+library(janitor)
+library(tinytable)
+library(DT)
+library(crosstable)
+library(geofacet)
+library(ggplot2)
+library(infer)
+library(vcd)
+library(vcdExtra)
+```
+
+### Inspecting the Data
+
+```{r}
+
+tattoo_data <- read_csv("~/Documents/R_work/DataRchive/posts/A3_Ashmita/Datasets/1-tattoo_attraction.csv") %>% 
+janitor::clean_names(case = "snake")
+tattoo_data
+```
+
+### Checking for missing data
+
+```{r}
+tattoo_data %>%
+  visdat::vis_miss()
+```
+
+Seems like there is no missing data! (Did I already know cause my team collected this data? Hmm)
+
+### Munging the data
+
+```{r}
+tattoo_data_mod1 <- tattoo_data %>% 
+mutate(gender = as.factor(gender),
+tattoo_attractive = as.factor(tattoo_attractive))
+```
+
+## Examining the Data
+
+### Taking a glimpse 👀 of the Data
+
+```{r}
+glimpse(tattoo_data_mod1)
+```
+
+There are a total of *40 entries*
+
+### Counting gender
+
+```{r}
+tattoo_data_mod1 %>% 
+  dplyr::count(gender) %>%
+  tt()
+```
+
+#### Observation
+
+-   There is an equal number of male and female representation
+
+### Counting tattoo attractive perception
+
+```{r}
+tattoo_data_mod1 %>% 
+  dplyr::count(tattoo_attractive) %>% 
+  tt()
+```
+
+```{r}
+tattoo_data_mod1 %>% 
+gf_bar(~tattoo_attractive, fill = "navy") %>% 
+gf_labs(title = "Do students find tattoos attractive?",
+       x = "Are tattoos attractive?",
+       y = "Number of students")
+```
+
+#### Observation
+
+-   We can see that exactly *75%* of the students find tattoos attractive
+-   This maybe due to the influence of the environment where tattoos are looked as a normal mark to have and/or younger generation embracing tattoos.
+
+### Does gender play a role in this?
+
+**Visualizing in a dodge & proportion bar graph**
+
+```{r}
+tattoo_data_mod1 %>% 
+gf_bar(~tattoo_attractive, fill = ~gender, position = "dodge") %>% 
+gf_labs(title = "Tattoo Attractiveness by Gender",
+       x = "Are tattoos attractive?",
+       y = "Number of students")
+
+```
+
+```{r}
+tattoo_data_mod1 %>% 
+gf_bar(~tattoo_attractive, fill = ~gender, position = "fill") %>% 
+gf_labs(title = "Tattoo Attractiveness by Gender",
+       x = "Are tattoos attractive?",
+       y = "Number of students")
+
+```
+
+Huh.. it's exactly leveled?
+
+**Verifying through counting**
+
+```{r}
+tattoo_data_mod1 %>% 
+    count(across(c("gender", "tattoo_attractive"))) %>%
+  tt()
+```
+
+#### Observation
+
+-   There is an equal distribution amongst the 2 genders with proportional responses mirroring each other.
+-   This suggests that there might be no gender bias in the perception of tattoos being attractive, indicating shared cultural values around body art rather than gender-specific preferences
+
+```{r}
+vcd::structable(gender ~ tattoo_attractive, data = tattoo_data_mod1) %>%
+  as.matrix() %>%
+  addmargins() %>%
+  as_tibble(rownames = "gender")
+
+vcd::structable(gender ~ tattoo_attractive, data = tattoo_data_mod1) %>%
+  vcd::mosaic(shade = TRUE, legend = TRUE,
+              main = "Tattoo Attractiveness by Gender")
+```
+
+### Observation
+
+-   The p value = 1 for the relationship between gender and tattoo attractiveness perception
+
+-   This indicates gender and tattoo appeal are statistically independent - tattoo preferences show no gender-based pattern
+
+## Conclusion from EDA
+
+This analysis reveals two key findings about tattoo perceptions among art and design students:
+
+**1. Strong cultural acceptance**
+
+-   **75% of art students** find tattoos attractive, demonstrating significant cultural embrace of body art
+
+-   Suggests **generational and educational shifts** in body art acceptance
+
+**2. Gender-neutral preferences**
+
+-   **Perfect statistical independence** (p = 1.0) between gender and tattoo appeal perceptions
+
+-   Both male and female students show **identical proportional responses**
+
+## Inference
+
+**Null hypothesis:** The proportion of students who find tattoos attractive equals 50%, indicating no majority preference in either direction.
+
+Statically, **H₀**: p = 0.5
+
+### Performing Binom Test
+
+```{r}
+mosaic::binom.test(~tattoo_attractive, data = tattoo_data_mod1, success = "Yes")
+```
+
+```{r}
+mosaic::binom.test(~tattoo_attractive, data = tattoo_data_mod1, success = "Yes") %>%
+  broom::tidy()
+```
+
+### Key Findings
+
+-   The binomial test provides **strong evidence** (p = 0.0022) that the 75% tattoo attractiveness rate is **not due to random chance**.
+
+-   We can **reject the null hypothesis** of 50-50 distribution (since p \< 0.05)
+
+-   **True population proportion** likely falls between 59-87% (which strangles 95% CI)
+
+## Final interpretation
+
+Srishti students demonstrate **significantly positive attitudes** toward tattoos, with 75% finding them attractive, a preference strongly supported by statistical evidence (p = 0.002). This substantial majority indicates that tattoo appeal is widely embraced within the art school environment with a universal appeal across genders, reflecting strong cultural acceptance rather than neutral or divided opinions

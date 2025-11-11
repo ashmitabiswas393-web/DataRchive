@@ -1,0 +1,389 @@
+---
+title: "Are Dads weird?"
+author: "Ashmita Biswas"
+---
+
+# Are Dads weird?
+
+Paternal weirdness rating is...weird.
+
+![](images/clipboard-3560242678.png)
+
+## About the Data
+
+This data set is derived from the peasants of Manipal University where we wanted to understand if SMI dads embarrass their kids more than MIT dads.
+
+## Data Dictionary
+
+Qualitative Variables
+
+:   **gender:** Gender of the student where, M = Male, F = Female, NB = Non Binary
+
+:   **college:** Institute within Manipal University, the peasant belongs to.
+
+:   **is_dad_weird:** Is the dad perceived as weird or not, categorized by 'Yes' and 'No'
+
+:   **name:** Name of the student (aka. peasant)
+
+## Hypothesis
+
+-   Do SMI students find their dads to be weirder as compared to MIT?
+
+    **Something interesting to look for:**
+
+-   Is there a bias in gender when it comes do dad weirdness perception of dads?
+
+### Setup
+
+```{r}
+#| label: setup
+#| echo: false
+
+library(readr)
+library(tidyverse)
+library(ggformula)
+library(mosaic)
+library(skimr)
+library(visdat) 
+library(naniar)
+library(janitor)
+library(tinytable)
+library(DT)
+library(crosstable)
+library(geofacet)
+library(ggplot2)
+library(GGally)
+library(vcd)
+library(vcdExtra)
+```
+
+### Inspecting the Data
+
+```{r}
+
+weird_dad_data <- read_csv("~/Documents/R_work/DataRchive/posts/A3_Ashmita/Datasets/3-weird_dads.csv") %>%
+janitor::clean_names(case = "snake")
+weird_dad_data
+```
+
+### Reading the Data
+
+```{r}
+
+dad_weird_data <- read_csv("~/Documents/R_work/DataRchive/posts/A3_Ashmita/Datasets/3-weird_dads.csv") %>%
+janitor::clean_names(case = "snake")
+dad_weird_data
+```
+
+### Checking for missing data
+
+```{r}
+dad_weird_data %>%
+  visdat::vis_miss()
+```
+
+```{r}
+dad_weird_data %>%
+  visdat::vis_dat()
+```
+
+Seems like some peasants were boggled by the question 'Is your dad weird?' and couldn't comprehend to answer. Hence removing the entries for these confused souls
+
+```{r}
+dad_weird_mod1 <- dad_weird_data %>% 
+  naniar::replace_with_na_all(condition = ~ .x %in% common_na_strings) %>% 
+drop_na()
+dad_weird_mod1
+```
+
+One entry was dropped from the data set.
+
+### Munging the Data
+
+Factoring 'gender' and 'is_dad_weird'
+
+```{r}
+dad_weird_mod2 <- dad_weird_mod1 %>% 
+mutate(gender = as.factor(gender),
+       is_dad_weird = as.factor(is_dad_weird))
+```
+
+### Examining the Data
+
+Taking a glimpse of the Data
+
+```{r}
+glimpse(dad_weird_mod2)
+```
+
+### Counting gender
+
+```{r}
+dad_weird_mod2 %>% 
+  dplyr::count(gender) %>%
+  tt()
+```
+
+```{r}
+dad_weird_mod2 %>% 
+  gf_bar(~gender, fill = "purple") %>% 
+gf_labs(title = "Gender distribution",
+       x = "Gender",
+       y = "Count")
+
+```
+
+#### Observation
+
+-   There is nearly equal representation between Female (32) and Male (31) students
+-   Since the representation of Non-binary is one and not significant, for gender related tests, it will be excluded.
+
+### Counting representation for each college
+
+```{r}
+dad_weird_mod2 %>% 
+  dplyr::count(college) %>%
+  tt()
+```
+
+```{r}
+dad_weird_mod2 %>%
+  gf_bar(~college, fill = "dodgerblue") %>%
+  gf_labs(
+    title = "College representation",
+    x = "Colleges",
+    y = "Count"
+  )
+```
+
+#### Observation
+
+-   Both colleges are nearly equally represented, hence there is no bias in the data collection
+
+-   The 64-student sample is perfect for college-wise analysis with minimal sampling bias
+
+### Counting is_dad_weird
+
+```{r}
+dad_weird_mod2 %>% 
+  dplyr::count(is_dad_weird) %>%
+  tt()
+```
+
+```{r}
+dad_weird_mod2 %>%
+  gf_bar(~is_dad_weird, fill = "skyblue") %>%
+  gf_labs(
+    title = "Do students think their Dads are weird?",
+    x = "Is Dad weird?",
+    y = "Count"
+  )
+```
+
+#### Observation
+
+-   Huh! Most students are NOT finding their dad weird, now that's weird.
+-   **Strong 3:1 Ratio**: "Normal" dads significantly outnumber "weird" dads
+
+### How Dad weirdness relates to Gender
+
+```{r}
+dad_weird_mod2 %>%
+  filter(gender != "NB") %>%
+  count(across(c("gender", "is_dad_weird"))) %>%
+  tt()
+```
+
+```{r}
+dad_weird_mod2 %>%
+   filter(gender != "NB") %>%
+  gf_bar(~gender, fill = ~is_dad_weird, position = "fill") %>%
+  gf_labs(
+    title = "Gender vs. Dad Weirdness",
+    subtitle = "Do sons and daughters rate dad-cringe differently?",
+    x = "Gender",
+    y = "Proportion"
+  )
+```
+
+### Observation
+
+-   Nearly identical gender patterns
+
+-   23 Females and 24 Males say that there Dads are not weird
+
+### Dad weirdness for colleges
+
+```{r}
+dad_weird_mod2 %>%
+  filter(gender != "NB") %>%
+  count(across(c("college", "is_dad_weird"))) %>%
+  tt()
+```
+
+Visualizing in a Dodge and Proportion Bar graph
+
+```{r}
+dad_weird_mod2 %>%
+  gf_bar(~college, fill = ~is_dad_weird, position = "dodge") %>%
+  gf_labs(
+    title = "Dad Weirdness for SMI & MIT",
+    x = "College",
+    y = "Count"
+  )
+```
+
+**Let's check their proportions**
+
+```{r}
+dad_weird_mod2 %>%
+  gf_bar(~college, fill = ~is_dad_weird, position = "fill") %>%
+  gf_labs(
+    title = "Dad Weirdness: SMI vs MIT Showdown",
+    x = "College",
+    y = "Proportion",
+    fill = "Weird Dad?"
+  )
+```
+
+#### Observation
+
+-   There seems to be a distinct divide among colleges
+
+-   **MIT Students**: 28 of 32 say dads are NOT weird (too good to be true?)
+
+-   **SMI Students**: 19 of 31 say dads are NOT weird (here's the weirdness!)
+
+-   SMI students are **3x more likely** to report weird dads compared to MIT
+
+### Checking Weridness and College relation statistically by a Mosaic Plot
+
+```{r}
+
+vcd::structable(college ~ is_dad_weird, data = dad_weird_mod2) %>%
+  vcd::mosaic(shade = TRUE, legend = TRUE,
+              main = "College vs Dad Weirdness",
+              gp = shading_max)
+```
+
+### Observation
+
+-   The **p-value of 0.042** provides **statistically significant evidence** that there is a real difference in dad weirdness perceptions between MIT and SMI students.
+
+-   There appears to be something about the **SMI environment or student demographics** that leads to higher rates of paternal "weirdness" perception compared to the MIT campus culture.
+
+## Conclusion from EDA
+
+This analysis reveals a clear and statistically significant pattern in how students perceive their fathers:
+
+**1. College matters most**
+
+-   **Statistically Significant**: p = 0.042 confirms this is a real pattern, not random chance
+
+-   **Cultural Divide**: Different campus environments appear to shape paternal perception dramatically
+
+**2. Gender doesn't matter**
+
+-   Both male and female students overwhelmingly see dads as normal
+
+**3. Dad approval**
+
+-   73% of students give their fathers a "normal" rating
+
+## Inference
+
+**Null Hypothesis:** There is no difference in dad weirdness perceptions between MIT and SMI students - any observed variation occurs by random chance alone.
+
+### Performing Chi-Square Test
+
+**Creating contingency table & running chi-square test**
+
+```{r}
+contingency_table <- table(dad_weird_mod2$college, dad_weird_mod2$is_dad_weird)
+xq_test_object <- mosaic::xchisq.test(contingency_table)
+```
+
+-   The p-value of 0.0644 indicates **borderline significance** - while not statistically significant at the conventional 0.05 level, it strongly suggests a meaningful pattern where SMI students consistently report more dad weirdness than expected, while MIT students report less.
+
+**Extracting observed chi-square statistic**
+
+```{r}
+xq_test_object %>%
+  broom::tidy() %>%
+  select(statistic) %>%
+  as.numeric() -> X_squared_observed
+X_squared_observed
+```
+
+**Determining the Chi-Square critical value**
+
+```{r}
+X_squared_critical <- qchisq(
+  p = .05,
+  df = (2 - 1) * (2 - 1), 
+  lower.tail = FALSE
+)
+X_squared_critical
+```
+
+-   **Bbserved value**: 3.420189
+
+-   **Critical value**: 3.841459
+
+-   **Decision**: Since 3.42 \< 3.84, your test statistic **does not exceed** the critical threshold
+
+**Visualization for the critical value**
+
+```{r}
+ggplot2::theme_set(new = ggplot2::theme_minimal())
+
+mosaic::xqchisq(
+  p = 0.95, df = 1,  
+  return = c("plot"), verbose = FALSE,
+  system = "gg"
+) %>%
+  gf_labs(
+    title = "Chi-Square Test: College vs Dad Weirdness",
+    x = "Chi-Square Value", 
+    y = "Density"
+  ) %>%
+  gf_vline(
+    xintercept = X_squared_observed,
+    color = "red", linewidth = 1
+  ) %>%
+  gf_vline(
+    xintercept = X_squared_critical,
+    color = "dodgerblue",
+    linewidth = 1
+  ) %>%
+  gf_annotate(
+    x = X_squared_observed - 1, y = 0.25,
+    geom = "label", label = "Observed\nChi-Square",
+    fill = "red", alpha = 0.3
+  ) %>%
+  gf_annotate("curve", 
+    x = X_squared_observed - 1, y = 0.23,
+    xend = X_squared_observed - 0.1, yend = 0.15,
+    linewidth = 0.5, curvature = 0.3,
+    arrow = arrow(length = unit(0.15, "cm"))
+  ) %>%
+  gf_annotate(
+    x = X_squared_critical + 1, y = 0.25,
+    geom = "label", label = "Critical\nChi-Square",
+    fill = "lightblue", alpha = 0.3
+  ) %>%
+  gf_annotate("curve", 
+    x = X_squared_critical + 1, y = 0.23,
+    xend = X_squared_critical + 0.1, yend = 0.15,
+    linewidth = 0.5, curvature = -0.3,
+    arrow = arrow(length = unit(0.15, "cm"))
+  )
+```
+
+-   Observed chi-square value falls in the **"fail to reject" region** of the distribution, meaning the difference in dad weirdness perceptions between MIT and SMI, while suggestive, is **not statistically significant** at the conventional 0.05 level.
+
+-   The pattern observed (SMI students reporting more dad weirdness) could reasonably occur by random chance about 6.4% of the time (matching the earlier p-value of 0.0644).
+
+## Final interpretation
+
+Despite the popular “cringey dad” stereotype, most students (73%) see their fathers as completely normal. The most interesting difference appears between institutions: although not quite statistically significant (p = 0.064), the 27-point gap between MIT (88%) and SMI (61%) is hard to ignore. The chi-square result (3.42 vs. 3.84) falls just short of the cutoff, but the consistent pattern and effect size suggest something real may be happening, worth exploring further.

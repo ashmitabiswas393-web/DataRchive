@@ -1,0 +1,234 @@
+---
+title: "Believe in God"
+author: "Ashmita Biswas"
+---
+
+# Believe in God
+
+Real or Myth?
+
+![](images/clipboard-1676803513.png)
+
+## About the Data
+
+This data set explores the spiritual landscape of art students. A quantitative analysis of divine belief patterns at Srishti Manipal Institute.
+
+## Data Dictionary
+
+**Qualitative Variables**
+
+:   **Name:** Name of the student
+
+:   **Gender:** Gender of the student, categorized by 'Male' and 'Female'
+
+:   **Believe_in_God:** Students' believe in God, categorized as 'Yes' and 'No'
+
+## Hypothesis
+
+-   In an art & design educational environment, will students show higher rates of non-belief compared to the general population due to exposure to diverse perspectives and critical thinking emphasis?
+
+**Something more to look for**
+
+-   There might be gender differences in religious belief patterns due potential cultural socialization influences.
+
+### Setup
+
+```{r}
+#| label: setup
+#| echo: false
+
+library(readr)
+library(tidyverse)
+library(ggformula)
+library(mosaic)
+library(skimr)
+library(visdat) 
+library(naniar)
+library(janitor)
+library(tinytable)
+library(DT)
+library(crosstable)
+library(geofacet)
+library(ggplot2)
+library(GGally)
+library(vcd)
+library(vcdExtra)
+```
+
+### Inspecting the Data
+
+```{r}
+
+believe_data <- read_csv("~/Documents/R_work/DataRchive/posts/A3_Ashmita/Datasets/5-believe_in_god.csv") %>%
+janitor::clean_names(case = "snake")
+believe_data
+```
+
+### Checking for missing data
+
+```{r}
+believe_data %>%
+  visdat::vis_miss()
+```
+
+```{r}
+believe_data %>%
+  visdat::vis_dat()
+```
+
+There are missing values in the data as some students might have chose to not answer the question. Hence **removing unanswered entries**.
+
+```{r}
+believe_mod1 <- believe_data %>% 
+  naniar::replace_with_na_all(condition = ~ .x %in% common_na_strings) %>% 
+drop_na()
+believe_mod1
+```
+
+6 entries are dropped from the dataset.
+
+### Munging the Data
+
+Factoring 'gender' and 'believe_in_god'
+
+```{r}
+believe_mod2 <- believe_mod1 %>% 
+mutate(gender = as.factor(gender),
+       believe_in_god = as.factor(believe_in_god))
+```
+
+### Counting gender
+
+```{r}
+believe_mod2 %>% 
+  dplyr::count(gender) %>%
+  tt()
+```
+
+```{r}
+believe_mod2 %>%
+  gf_bar(~gender, fill = "gold") %>%
+  gf_labs(
+    title = "Gender representation",
+    x = "Gender",
+    y = "Count"
+  )
+```
+
+#### Observation
+
+-   There is a slight imbalance in the gender proportion, but not very significant.
+
+-   Both genders have substantial representation, though not perfectly equal
+
+### Counting believe_in_god
+
+```{r}
+believe_mod2 %>% 
+  dplyr::count(believe_in_god) %>%
+  tt()
+```
+
+```{r}
+believe_mod2 %>% 
+gf_bar(~believe_in_god, fill = "orange") %>% 
+gf_labs(title = "Do students believe in God?",
+       x = "Believes in God",
+       y = "Count")
+```
+
+#### Observation
+
+-   Clearly, majority believe in God vs. not believing.
+
+-   Believers outnumber non-believers by nearly 2 to 1
+
+-   The sample has a slight female majority - could this gender imbalance influence the overall belief distribution?
+
+### Belief by Gender
+
+**Counting Belief by Gender**
+
+```{r}
+believe_mod2 %>% 
+    count(across(c("gender", "believe_in_god"))) %>%
+  tt()
+```
+
+**Visualizing in a Dodged Bar graph**
+
+```{r}
+believe_mod2 %>%
+  gf_bar(~believe_in_god, fill = ~gender, position = "dodge") %>%
+  gf_labs(
+    title = "Belief in God by Gender",
+    x = "Believes in God",
+    y = "Count",
+    fill = "Gender"
+  )
+```
+
+#### Observation
+
+-   There is a strong belief among females where, **18** are believer and **6** are non-believers
+-   For males, the belief in nearly split where, **8** are believers and **9** arenon-believers
+-   **Gender** seems to be a predictor of religious belief in this student population, with female students nearly twice as likely to believe in God compared to male students.
+
+### Checking the correlation between Gender and Belief with Mosaic Plot
+
+```{r}
+vcd::structable(gender ~ believe_in_god, data = believe_mod2) %>%
+  vcd::mosaic(shade = TRUE, legend = TRUE,
+              main = "Gender vs Belief in God",
+              gp = shading_max)
+```
+
+#### Observation:
+
+-   Since **p \< 0.05,** there is statistically significant evidence that gender affects belief in God patterns among students
+
+-   Although it is important to note that, p = 0.044 is barely significant (close to the 0.05 threshold) and the relation might be fairly weak.
+
+-   With a smaller sample, this small of a difference might not be significant
+
+## Conclusion from EDA
+
+This analysis reveals two key insights about religious belief among art & design students:
+
+**1. Majority maintains traditional belief**
+
+-   Contrary to the hypothesis, **65% of the students believe in God**, a substantial majority that challenges expectations of higher secularism in creative educational environments.
+
+**2. Significant gender divide**
+
+-   A **pronounced gender gap** exists: **18 female students** believe versus **only 8 of males** - a difference that is statistically significant (p = 0.044), though the relationship is relatively weak.
+
+## Inference
+
+**Null hypothesis:** TThe proportion of students who believe in God is 50% - there is no majority preference in either direction.
+
+Statically, **H₀**: p = 0.5
+
+### Performing Binom Test
+
+```{r}
+mosaic::binom.test(~believe_in_god, data = believe_mod2, success = "Yes")
+```
+
+```{r}
+mosaic::binom.test(~believe_in_god, data = believe_mod2, success = "Yes") %>%
+  broom::tidy()
+```
+
+### Key Findings
+
+-   The p-value (0.117) indicates we cannot reject the null hypothesis that belief and non-belief are equally distributed (50–50).
+-   Observed Belief rate: **63.4%** of art students believe in God
+-   Not significant at the **0.05** level (p = 0.117).
+-   The true population proportion likely falls between **47% and 78%**
+
+Although a numerical majority (63%) identify as believers, the difference is **not statistically significant**, suggesting that this imbalance could occur by chance in a population with equal proportions of belief and non-belief.
+
+## Final interpretation
+
+Art & Design students **do not show a statistically significant tendency** toward belief or non-belief in God. While the 63% belief rate hints at a potential leaning toward theism, the evidence is insufficient to conclude a meaningful departure from an even 50–50 distribution.

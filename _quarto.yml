@@ -1,8 +1,9 @@
 project:
   type: website
+title: "DataRchive"
 
 website:
-  title: "ClassWork2"
+  title: "DataRchive"
   navbar:
     right:
       - about.qmd
