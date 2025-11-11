@@ -7,4 +7,4 @@
 **/*.quarto_ipynb
 .httr-oauth
 .DS_Store
-.quarto
+/.quarto/
